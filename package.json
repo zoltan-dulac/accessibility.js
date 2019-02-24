@@ -28,7 +28,7 @@
     "build:prod": "BABEL_ENV=production npx babel js/accessibility.js --out-file dist/accessibility-es4-min.js",
     "build:all": "npm run build; npm run build:prod",
     "clean": "rimraf dist/*",
-    "updateMinor": "V=`npm update minor`; git tag $V; git push origin $V",
+    "updateMinor": "V=`npm version minor`; git tag $V; git push origin $V",
     "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
