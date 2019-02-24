@@ -1,11 +1,8 @@
 {
   "name": "accessibility-js-routines",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A library with commonly used accessibility routines.",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zoltan-dulac/accessibility.js.git"
@@ -30,6 +27,8 @@
     "build": "npx babel js/accessibility.js --out-file dist/accessibility-es4.js",
     "build:prod": "BABEL_ENV=production npx babel js/accessibility.js --out-file dist/accessibility-es4-min.js",
     "build:all": "npm run build; npm run build:prod",
-    "clean": "rimraf dist/*"
+    "clean": "rimraf dist/*",
+    "updateMinor": "V=`npm update minor`; git tag $V; git push origin $V",
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
