@@ -40,7 +40,7 @@ const accessibility = {
      :enabled:not(fieldset):not([tabindex="-1"]):not([disabled]),
      object:not([tabindex="-1"]):not([disabled]),
      embed:not([tabindex="-1"]):not([disabled]),
-     [tabindex]:not([tabindex="-1"])':not([disabled])`,
+     [tabindex]:not([tabindex="-1"]):not([disabled])`,
   htmlTagRegex: /(<([^>]+)>)/gi,
   hasSecondaryNavSkipTarget: false,
 
