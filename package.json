@@ -1,22 +1,8 @@
 {
   "name": "accessibility-js-routines",
-<<<<<<< HEAD
   "version": "1.1.0",
   "description": "A library with commonly used accessibility routines.",
   "main": "index.js",
-  "scripts": {
-    "build": "npx babel js/accessibility.js --out-file dist/accessibility-es4.js",
-    "build:prod": "BABEL_ENV=production npx babel js/accessibility.js --out-file dist/accessibility-es4-min.js",
-    "build:all": "npm run build; npm run build:prod",
-    "clean": "rimraf dist/*"
-=======
-  "version": "1.0.0",
-  "description": "A library with commonly used accessibility routines.",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
->>>>>>> 5dd6ccf57111620be1799a899320559a80bf0ef3
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zoltan-dulac/accessibility.js.git"
@@ -36,14 +22,12 @@
     "@babel/core": "^7.3.3",
     "babel-minify": "^0.5.0",
     "babel-preset-minify": "^0.5.0"
-<<<<<<< HEAD
-=======
   },
   "scripts": {
     "build": "npx babel js/accessibility.js --out-file dist/accessibility-es4.js",
     "build:prod": "BABEL_ENV=production npx babel js/accessibility.js --out-file dist/accessibility-es4-min.js",
     "build:all": "npm run build; npm run build:prod",
-    "clean": "rimraf dist/*"
->>>>>>> 5dd6ccf57111620be1799a899320559a80bf0ef3
+    "clean": "rimraf dist/*",
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
