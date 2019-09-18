@@ -327,6 +327,16 @@ const accessibility = {
     const { body } = document;
     let currentEl = el;
 
+    // If there are any nodes with oldAriaHiddenVal set, we should
+    // bail, since it has already been done.
+    const hiddenEl = document.querySelector(`[${this.oldAriaHiddenVal}]`);
+
+    if (hiddenEl === null) {
+      // eslint-disable-next-line no-console
+      console.warn('Attempted to run setMobileFocusLoop() twice in a row.  removeMobileFocusLoop() must be executed before it run again. Bailing.');
+      return;
+    }
+
     do {
       // for every sibling of currentElement, we mark with
       // aria-hidden="true".

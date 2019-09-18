@@ -327,7 +327,16 @@ var accessibility = {
   setMobileFocusLoop: function setMobileFocusLoop(el) {
     var _document4 = document,
         body = _document4.body;
-    var currentEl = el;
+    var currentEl = el; // If there are any nodes with oldAriaHiddenVal set, we should
+    // bail, since it has already been done.
+
+    var hiddenEl = document.querySelector("[".concat(this.oldAriaHiddenVal, "]"));
+
+    if (hiddenEl === null) {
+      // eslint-disable-next-line no-console
+      console.warn('Attempted to run setMobileFocusLoop() twice in a row.  removeMobileFocusLoop() must be executed before it run again. Bailing.');
+      return;
+    }
 
     do {
       // for every sibling of currentElement, we mark with
