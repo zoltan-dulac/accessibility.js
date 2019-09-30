@@ -396,6 +396,112 @@ const accessibility = {
       body.removeEventListener('focus', this.correctFocusFromBrowserChrome.bind(this), true);
       this.removeMobileFocusLoop(el);
     }
+  },
+
+  /**
+   * Takes the *positive* modulo of n % m.  Javascript will
+   * return negative ones if n < 0.
+   */
+  mod(n, m) {
+    return ((n % m) + m) % m;
+  },
+
+  /**
+   * Makes the arrow keys work on a radiogroup's radio buttons.
+   *
+   * @param {HTMLElement} el - the radiogroup in question.
+   * @param {object} options - an optional set of options:
+   *
+   * - allowTabbing: if set to true, allows tabbing of the individual
+   *   radio buttons with the tab key.  This is useful when the radio
+   *   buttons don't look like radio buttons.
+   * - doKeyChecking: if set to true, then this allows the space and
+   *   the enter key to allow checking of the radio button.
+   */
+  setArrowKeyRadioGroupEvents(el, options) {
+    const { allowTabbing, doKeyChecking } = (options || {});
+    el.dataset.allowTabbing = !!allowTabbing;
+    el.dataset.doKeyChecking = !!doKeyChecking;
+    el.addEventListener('keydown', this.radioGroupKeyUpEvent.bind(this), true);
+  },
+
+  /**
+   *
+   * Checks an ARIA radio button, while unchecking the others in its radiogroup.
+   *
+   * @param {HTMLElement} radioEl - a radio button that needs to be checked
+   * @param {Array} radioGroupEls - an array of radio buttons that is in the same group as radioEl
+   */
+  checkRadioButton(radioEl, radioGroupEls) {
+    for (let i = 0; i < radioGroupEls.length; i++) {
+      const currentRadio = radioGroupEls[i];
+      let checkedState = 'false';
+      if (currentRadio === radioEl) {
+        checkedState = 'true';
+      }
+      currentRadio.setAttribute('aria-checked', checkedState);
+    }
+  },
+
+  /**
+   * Implements keyboard events for ARIA radio buttons.
+   *
+   * @param {Event} e - the keyboard event.
+   */
+  radioGroupKeyUpEvent(e) {
+    const { key, target, currentTarget, shiftKey } = e;
+    const { allowTabbing, doKeyChecking } = currentTarget.dataset;
+
+    if (target.getAttribute('role') === 'radio') {
+      const radioEls = Array.from(currentTarget.querySelectorAll('[role="radio"]'));
+      const targetIndex = radioEls.indexOf(target);
+      let elToFocus;
+
+
+      if (targetIndex >= 0) {
+        switch (key) {
+          case 'ArrowUp':
+          case 'ArrowLeft':
+            elToFocus = radioEls[this.mod(targetIndex - 1, radioEls.length)];
+            this.checkRadioButton(elToFocus, radioEls);
+            break;
+          case 'ArrowDown':
+          case 'ArrowRight':
+            elToFocus = radioEls[this.mod(targetIndex + 1, radioEls.length)];
+            this.checkRadioButton(elToFocus, radioEls);
+            break;
+          case 'Tab':
+            if (allowTabbing !== 'true') {
+              const tabbableEls = Array.from(document.querySelectorAll(this.tabbableSelector));
+              const tabbableElsWithoutRadios = tabbableEls.filter(function(el) {
+                return el === target || radioEls.indexOf(el) < 0;
+              });
+              const tabbableIndex = Array.from(tabbableElsWithoutRadios).indexOf(target);
+
+              if (shiftKey) {
+                elToFocus = tabbableElsWithoutRadios[this.mod(tabbableIndex - 1, tabbableElsWithoutRadios.length)];
+              } else {
+                elToFocus = tabbableElsWithoutRadios[this.mod(tabbableIndex + 1, tabbableElsWithoutRadios.length)];
+              }
+            }
+            break;
+          case ' ':
+            if (doKeyChecking) {
+              this.checkRadioButton(target, radioEls);
+              e.preventDefault();
+            }
+            break;
+          default:
+        }
+
+        if (elToFocus) {
+          e.preventDefault();
+          requestAnimationFrame(function() {
+            elToFocus.focus();
+          });
+        }
+      }
+    }
   }
 };
 
