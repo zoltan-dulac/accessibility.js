@@ -246,6 +246,10 @@ const accessibility = {
    * @param {HTMLElement} blurredEl
    */
   keepFocusInsideActiveSubdoc(blurredEl) {
+    if (!this.activeSubdocument) {
+      return;
+    }
+
     const allowableFocusableEls = this.activeSubdocument.querySelectorAll(this.tabbableSelector);
     const firstFocusableElement = allowableFocusableEls[0];
     const lastFocusableElement = allowableFocusableEls[allowableFocusableEls.length - 1];
@@ -331,7 +335,7 @@ const accessibility = {
     // bail, since it has already been done.
     const hiddenEl = document.querySelector(`[${this.oldAriaHiddenVal}]`);
 
-    if (hiddenEl === null) {
+    if (hiddenEl !== null) {
       // eslint-disable-next-line no-console
       console.warn('Attempted to run setMobileFocusLoop() twice in a row.  removeMobileFocusLoop() must be executed before it run again. Bailing.');
       return;

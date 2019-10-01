@@ -241,6 +241,10 @@ var accessibility = {
    * @param {HTMLElement} blurredEl
    */
   keepFocusInsideActiveSubdoc: function keepFocusInsideActiveSubdoc(blurredEl) {
+    if (!this.activeSubdocument) {
+      return;
+    }
+
     var allowableFocusableEls = this.activeSubdocument.querySelectorAll(this.tabbableSelector);
     var firstFocusableElement = allowableFocusableEls[0];
     var lastFocusableElement = allowableFocusableEls[allowableFocusableEls.length - 1];
@@ -332,7 +336,7 @@ var accessibility = {
 
     var hiddenEl = document.querySelector("[".concat(this.oldAriaHiddenVal, "]"));
 
-    if (hiddenEl === null) {
+    if (hiddenEl !== null) {
       // eslint-disable-next-line no-console
       console.warn('Attempted to run setMobileFocusLoop() twice in a row.  removeMobileFocusLoop() must be executed before it run again. Bailing.');
       return;
@@ -401,6 +405,191 @@ var accessibility = {
       body.removeEventListener('blur', this.testIfFocusIsOutside.bind(this), true);
       body.removeEventListener('focus', this.correctFocusFromBrowserChrome.bind(this), true);
       this.removeMobileFocusLoop(el);
+    }
+  },
+
+  /**
+   * Takes the *positive* modulo of n % m.  Javascript will
+   * return negative ones if n < 0.
+   */
+  mod: function mod(n, m) {
+    return (n % m + m) % m;
+  },
+
+  /**
+   * Makes the arrow keys work on a radiogroup's radio buttons.
+   *
+   * @param {HTMLElement} el - the radiogroup in question.
+   * @param {object} options - an optional set of options:
+   *
+   * - allowTabbing: if set to true, allows tabbing of the individual
+   *   radio buttons with the tab key.  This is useful when the radio
+   *   buttons don't look like radio buttons.
+   * - doKeyChecking: if set to true, then this allows the space and
+   *   the enter key to allow checking of the radio button.
+   * - setState: if set to false, then the library doesn't set the
+   *   state.  It is assumed that `ariaCheckedCallback` will do the
+   *   setting of state of the checkbox instead (this is useful in
+   *   frameworks like React). Default is true.
+   * - ariaCheckedCallback: a callback to run when an element is checked.
+   *   The following parameters will be passed to it:
+   *   - el (the element that was checked),
+   *   - index (the index of the radio element within the radiogroup),
+   *   - prevCheckedIndex (the index of the radio element that was previously checked)
+   *   - group (the radiogroup that el is contained in)
+   * - radioFocusCallback: a callback to run when a radio button is focused.
+   *   The following parameters will be passed to it:
+   *   - el (the element that was checked),
+   *   - group (the radiogroup that el is contained in)
+   */
+  setArrowKeyRadioGroupEvents: function setArrowKeyRadioGroupEvents(el, options) {
+    var _ref = options || {},
+        allowTabbing = _ref.allowTabbing,
+        doKeyChecking = _ref.doKeyChecking,
+        ariaCheckedCallback = _ref.ariaCheckedCallback,
+        setState = _ref.setState,
+        radioFocusCallback = _ref.radioFocusCallback;
+
+    el.dataset.allowTabbing = !!allowTabbing;
+    el.dataset.doKeyChecking = !!doKeyChecking;
+    el.dataset.setState = setState === false ? false : true;
+    el.ariaCheckedCallback = ariaCheckedCallback;
+    el.radioFocusCallback = radioFocusCallback;
+    el.addEventListener('keydown', this.radioGroupKeyUpEvent.bind(this), true);
+    /* if (radioFocusCallback) {
+      el.addEventListener('focus', this.radioGroupFocusEvent.bind(this), true);
+    } */
+  },
+
+  /**
+   *
+   * Checks an ARIA radio button, while unchecking the others in its radiogroup.
+   *
+   * @param {HTMLElement} radioEl - a radio button that needs to be checked
+   * @param {Array} radioGroupEls - an array of radio buttons that is in the same group as radioEl
+   */
+  checkRadioButton: function checkRadioButton(e, radioEl, radioGroupEls, setState, ariaCheckedCallback) {
+    var previouslyCheckedEl;
+    var currentlyCheckedEl;
+    var currentlyCheckedIndex;
+
+    for (var i = 0; i < radioGroupEls.length; i++) {
+      var currentRadio = radioGroupEls[i];
+      var checkedState = 'false';
+
+      if (currentRadio.getAttribute('aria-checked') === 'true') {
+        previouslyCheckedEl = currentRadio;
+      }
+
+      if (currentRadio === radioEl) {
+        if (setState) {
+          checkedState = 'true';
+        }
+
+        currentlyCheckedEl = currentRadio;
+        currentlyCheckedIndex = i;
+      }
+
+      if (setState) {
+        currentRadio.setAttribute('aria-checked', checkedState);
+      }
+    }
+
+    if (ariaCheckedCallback) {
+      ariaCheckedCallback(e, currentlyCheckedEl, currentlyCheckedIndex, previouslyCheckedEl, radioGroupEls);
+    }
+  },
+  radioGroupFocusEvent: function radioGroupFocusEvent(e) {
+    var target = e.target,
+        currentTarget = e.currentTarget;
+    var radioFocusCallback = currentTarget.radioFocusCallback;
+    var radioEls = Array.from(currentTarget.querySelectorAll('[role="radio"]'));
+    var targetIndex = radioEls.indexOf(target);
+
+    if (radioFocusCallback) {
+      radioFocusCallback(e, target, targetIndex, currentTarget);
+    }
+  },
+
+  /**
+   * Implements keyboard events for ARIA radio buttons.
+   *
+   * @param {Event} e - the keyboard event.
+   */
+  radioGroupKeyUpEvent: function radioGroupKeyUpEvent(e) {
+    var key = e.key,
+        target = e.target,
+        currentTarget = e.currentTarget,
+        shiftKey = e.shiftKey;
+    var ariaCheckedCallback = currentTarget.ariaCheckedCallback,
+        dataset = currentTarget.dataset;
+    var allowTabbing = dataset.allowTabbing,
+        doKeyChecking = dataset.doKeyChecking,
+        setState = dataset.setState;
+    allowTabbing = allowTabbing === 'true';
+    setState = setState === 'true';
+    doKeyChecking = doKeyChecking === 'true';
+
+    if (target.getAttribute('role') === 'radio') {
+      var radioEls = Array.from(currentTarget.querySelectorAll('[role="radio"]'));
+      var targetIndex = radioEls.indexOf(target);
+      var elToFocus;
+
+      if (targetIndex >= 0) {
+        switch (key) {
+          case 'ArrowUp':
+          case 'ArrowLeft':
+            elToFocus = radioEls[this.mod(targetIndex - 1, radioEls.length)];
+            this.checkRadioButton(e, elToFocus, radioEls, setState, ariaCheckedCallback);
+            break;
+
+          case 'ArrowDown':
+          case 'ArrowRight':
+            elToFocus = radioEls[this.mod(targetIndex + 1, radioEls.length)];
+            this.checkRadioButton(e, elToFocus, radioEls, setState, ariaCheckedCallback);
+            break;
+
+          case 'Tab':
+            if (!allowTabbing) {
+              var tabbableEls = Array.from(document.querySelectorAll(this.tabbableSelector));
+              var tabbableElsWithoutRadios = tabbableEls.filter(function (el) {
+                return el === target || radioEls.indexOf(el) < 0;
+              });
+              var tabbableIndex = Array.from(tabbableElsWithoutRadios).indexOf(target);
+
+              if (shiftKey) {
+                elToFocus = tabbableElsWithoutRadios[this.mod(tabbableIndex - 1, tabbableElsWithoutRadios.length)];
+              } else {
+                elToFocus = tabbableElsWithoutRadios[this.mod(tabbableIndex + 1, tabbableElsWithoutRadios.length)];
+              }
+            }
+
+            break;
+
+          case ' ':
+            if (doKeyChecking) {
+              this.checkRadioButton(e, target, radioEls, setState, ariaCheckedCallback);
+              e.preventDefault();
+            }
+
+            break;
+
+          default:
+        }
+
+        if (elToFocus) {
+          e.preventDefault();
+          requestAnimationFrame(function () {
+            elToFocus.focus();
+
+            if (key === 'Tab') {
+              requestAnimationFrame(function () {
+                this.radioGroupFocusEvent(e);
+              });
+            }
+          });
+        }
+      }
     }
   }
 };
