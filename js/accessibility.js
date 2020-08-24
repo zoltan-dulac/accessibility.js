@@ -198,8 +198,10 @@ const a11yGroup = function (el, options) {
   this.onClick = (e) => {
     const { target, currentTarget } = e;
 
-    this.select(e, target);
-    target.focus();
+    if (target.getAttribute('role') === this.groupType) {
+      this.select(e, target);
+      target.focus();
+    }
   }
 
   this.onFocus = (e) => {
