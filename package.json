@@ -18,10 +18,10 @@
   },
   "homepage": "https://github.com/zoltan-dulac/accessibility.js#readme",
   "devDependencies": {
-    "@babel/cli": "^7.2.3",
-    "@babel/core": "^7.3.3",
-    "babel-minify": "^0.5.0",
-    "babel-preset-minify": "^0.5.0"
+    "@babel/cli": "^7.10.5",
+    "@babel/core": "^7.11.4",
+    "babel-minify": "^0.5.1",
+    "babel-preset-minify": "^0.5.1"
   },
   "scripts": {
     "build": "npx babel js/accessibility.js --out-file dist/accessibility-es4.js",
@@ -32,5 +32,8 @@
     "update:minor": "V=`npm version minor`; git push origin $V; npm publish",
     "update:major": "V=`npm version major`; git push origin $V; npm publish",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@babel/preset-env": "^7.11.0"
   }
 }
