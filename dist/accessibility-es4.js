@@ -224,9 +224,11 @@ var a11yGroup = function a11yGroup(el, options) {
     var target = e.target,
         currentTarget = e.currentTarget;
 
-    _this.select(e, target);
+    if (target.getAttribute('role') === _this.groupType) {
+      _this.select(e, target);
 
-    target.focus();
+      target.focus();
+    }
   };
 
   this.onFocus = function (e) {
