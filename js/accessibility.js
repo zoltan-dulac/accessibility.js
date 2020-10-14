@@ -698,6 +698,36 @@ const accessibility = {
     }
   },
 
+  /**
+   * Firefox, unlike other browsers, doesn't give default focus to
+   * an anchor link's target (e.g. clicking <a href="#main-nav">..</a>
+   * will not result in the focus of <a href="#" id="main-nav">..</a>).
+   * In order to work around this, devs can use this onClick handler
+   * to emulate this.
+   *
+   * @param {Event} e - the click event object.
+   */
+  firefoxFocusAnchorLink(e) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    const { href } = target;
+    const splitHref = href.split('#');
+    const anchorId = splitHref.length === 2 ? splitHref[1] : '';
+    const { pushState } = window.history;
+    const { pathname } = window.location;
+
+    const anchorEl = document.getElementById(anchorId);
+    if (anchorEl) {
+      anchorEl.focus();
+
+      if (pushState) {
+        pushState({
+          anchorId
+        }, anchorId, `${pathname}#${anchorId}`);
+      }
+    }
+  },
+
   initGroup: function (el, options) {
     this.groups.push(new a11yGroup(el, options));
   },

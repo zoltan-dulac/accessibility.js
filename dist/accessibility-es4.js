@@ -746,6 +746,36 @@ var accessibility = {
       this.removeMobileFocusLoop(el);
     }
   },
+
+  /**
+   * Firefox, unlike other browsers, doesn't give default focus to
+   * an anchor link's target (e.g. clicking <a href="#main-nav">..</a>
+   * will not result in the focus of <a href="#" id="main-nav">..</a>).
+   * In order to work around this, devs can use this onClick handler
+   * to emulate this.
+   *
+   * @param {Event} e - the click event object.
+   */
+  firefoxFocusAnchorLink: function firefoxFocusAnchorLink(e) {
+    e.preventDefault();
+    var target = e.currentTarget;
+    var href = target.href;
+    var splitHref = href.split('#');
+    var anchorId = splitHref.length === 2 ? splitHref[1] : '';
+    var pushState = window.history.pushState;
+    var pathname = window.location.pathname;
+    var anchorEl = document.getElementById(anchorId);
+
+    if (anchorEl) {
+      anchorEl.focus();
+
+      if (pushState) {
+        pushState({
+          anchorId: anchorId
+        }, anchorId, "".concat(pathname, "#").concat(anchorId));
+      }
+    }
+  },
   initGroup: function initGroup(el, options) {
     this.groups.push(new a11yGroup(el, options));
   },
