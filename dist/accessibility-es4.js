@@ -10,10 +10,11 @@
  * You will also need npx: https://www.npmjs.com/package/npx
  * and the env preset: https://stackoverflow.com/questions/34747693/how-do-i-get-babel-6-to-compile-to-es5-javascript
  */
-// add contains polyfill here (for IE11).  The typeof 
+var accessibility; // add contains polyfill here (for IE11).  The typeof 
 // document/window check is to ensure this 
 // script doesn't break server side rendering
 // frameworks like Nashorn.
+
 if (typeof document !== 'undefined' && typeof window !== 'undefined' && typeof Element.prototype.contains !== 'function') {
   Element.prototype.contains = function contains(el) {
     return this.compareDocumentPosition(el) % 16;
@@ -364,7 +365,7 @@ var a11yGroup = function a11yGroup(el, options) {
  */
 
 
-var accessibility = {
+accessibility = {
   tempFocusElement: null,
   tempFocusElementText: ' select ',
   tabbableSelector: "a[href]:not([tabindex=\"-1\"]):not([disabled]),\n     area[href]:not([tabindex=\"-1\"]):not([disabled]),\n     details:not([tabindex=\"-1\"]):not([disabled]),\n     iframe:not([tabindex=\"-1\"]):not([disabled]),\n     keygen:not([tabindex=\"-1\"]):not([disabled]),\n     [contentEditable=true]:not([tabindex=\"-1\"]):not([disabled]),\n     :enabled:not(fieldset):not([tabindex=\"-1\"]):not([disabled]),\n     object:not([tabindex=\"-1\"]):not([disabled]),\n     embed:not([tabindex=\"-1\"]):not([disabled]),\n     [tabindex]:not([tabindex=\"-1\"]):not([disabled])",

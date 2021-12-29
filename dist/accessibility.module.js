@@ -9,6 +9,7 @@
  * and the env preset: https://stackoverflow.com/questions/34747693/how-do-i-get-babel-6-to-compile-to-es5-javascript
  */
 
+let accessibility;
 
 // add contains polyfill here (for IE11).  The typeof 
 // document/window check is to ensure this 
@@ -321,7 +322,7 @@ const a11yGroup = function(el, options) {
  * that can be used in any project to make it more accessible and assistive
  * technology/screenreader friendly.
  */
-const accessibility = {
+accessibility = {
 
   tempFocusElement: null,
   tempFocusElementText: ' select ',
