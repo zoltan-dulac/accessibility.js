@@ -10,9 +10,11 @@
  * You will also need npx: https://www.npmjs.com/package/npx
  * and the env preset: https://stackoverflow.com/questions/34747693/how-do-i-get-babel-6-to-compile-to-es5-javascript
  */
-// add contains polyfill here (for IE11).  The typeof document check is to ensure this 
-// script doesn't break server side rendering frameworks like Nashorn.
-if (typeof document !== 'undefined' && typeof Element.prototype.contains !== 'function') {
+// add contains polyfill here (for IE11).  The typeof 
+// document/window check is to ensure this 
+// script doesn't break server side rendering
+// frameworks like Nashorn.
+if (typeof document !== 'undefined' && typeof window !== 'undefined' && typeof Element.prototype.contains !== 'function') {
   Element.prototype.contains = function contains(el) {
     return this.compareDocumentPosition(el) % 16;
   };
@@ -21,44 +23,40 @@ if (typeof document !== 'undefined' && typeof Element.prototype.contains !== 'fu
     return document.body.contains(el);
   };
 }
-/* global window document */
-
 /**
-   * Makes the arrow keys work on ARIA group elements, such as ARIA radio buttons, ARIA tabs and ARIA listbox options.
-   *
-   * @param {HTMLElement} el - the radiogroup in question.
-   * @param {object} options - an optional set of options:
-   *
-   * - doSelectFirstOnInit: if set to true, select the first element
-   *   in the group when initialized.
-   * - setMouseEvents: if set to true, this library will handle the
-   *   mouse events.
-   * - visuallyHiddenClass: if set, this library will use this
-   *   string as its 'visually hidden' class instead of the sr-only
-   *   on used in frameworks like bootstrap
-   * - allowTabbing: if set to true, allows tabbing of the individual
-   *   radio buttons with the tab key.  This is useful when the radio
-   *   buttons don't look like radio buttons.
-   * - doKeyChecking: if set to true, then this allows the space and
-   *   the enter key to allow checking of the radio button.
-   * - setState: if set to false, then the library doesn't set the
-   *   state.  It is assumed that `ariaCheckedCallback` will do the
-   *   setting of state of the checkbox instead (this is useful in
-   *   frameworks like React). Default is true.
-   * - preventClickDefault: prevents the default on the click event.
-   * - ariaCheckedCallback: a callback to run when an element is checked.
-   *   The following parameters will be passed to it:
-   *     - e (the event that initiated the callback)
-   *     - currentlyCheckedEl (the element that just got checked)
-   *     - currentlyCheckedIndex (the index of currentlyCheckedEl within the group)
-   *     - previouslyCheckedEl (the previously checked element)
-   *     - groupEls - all the elements within the group
-   *  - focusCallback: a callback to run when a radio button is focused.
-   *    (this was previously called radioFocusCallback)
-   *    The following parameters will be passed to it:
-   *      - el (the element that was checked),
-   *      - group (the radiogroup that el is contained in)
-   */
+ * Makes the arrow keys work on ARIA group elements, such as ARIA radio buttons, ARIA tabs and ARIA listbox options.
+ *
+ * @param {HTMLElement} el - the radiogroup in question.
+ * @param {object} options - an optional set of options:
+ *
+ * - doSelectFirstOnInit: if set to true, select the first element
+ *   in the group when initialized.
+ * - visuallyHiddenClass: if set, this library will use this
+ *   string as its 'visually hidden' class instead of the sr-only
+ *   on used in frameworks like bootstrap
+ * - allowTabbing: if set to true, allows tabbing of the individual
+ *   radio buttons with the tab key.  This is useful when the radio
+ *   buttons don't look like radio buttons.
+ * - doKeyChecking: if set to true, then this allows the space and
+ *   the enter key to allow checking of the radio button.
+ * - setState: if set to false, then the library doesn't set the
+ *   state.  It is assumed that `ariaCheckedCallback` will do the
+ *   setting of state of the checkbox instead (this is useful in
+ *   frameworks like React). Default is true.
+ * - preventClickDefault: prevents the default on the click event.
+ * - ariaCheckedCallback: a callback to run when an element is checked.
+ *   The following parameters will be passed to it:
+ *     - e (the event that initiated the callback)
+ *     - currentlyCheckedEl (the element that just got checked)
+ *     - currentlyCheckedIndex (the index of currentlyCheckedEl within the group)
+ *     - previouslyCheckedEl (the previously checked element)
+ *     - groupEls - all the elements within the group
+ *  - focusCallback: a callback to run when a radio button is focused.
+ *    (this was previously called radioFocusCallback)
+ *    The following parameters will be passed to it:
+ *      - el (the element that was checked),
+ *      - group (the radiogroup that el is contained in)
+ */
 
 
 var a11yGroup = function a11yGroup(el, options) {
@@ -72,7 +70,7 @@ var a11yGroup = function a11yGroup(el, options) {
    * return negative ones if n < 0.
    * @param {int} n - the modulus  
    * @param {int} m - the divisor
-   * @returns The positive modulo of n mod m.
+   * @returns {int} The positive modulo of n mod m.
    */
 
   this.mod = function (n, m) {
@@ -94,7 +92,6 @@ var a11yGroup = function a11yGroup(el, options) {
         radioFocusCallback = _ref.radioFocusCallback,
         focusCallback = _ref.focusCallback,
         doSelectFirstOnInit = _ref.doSelectFirstOnInit,
-        setMouseEvents = _ref.setMouseEvents,
         visuallyHiddenClass = _ref.visuallyHiddenClass;
 
     _this.allowTabbing = !!allowTabbing;
@@ -165,9 +162,6 @@ var a11yGroup = function a11yGroup(el, options) {
         var _el = groupEls[i];
 
         if (_el.getAttribute(_this.checkedAttribute) === 'true') {
-          // it's this one here
-          console.log('here', _this.groupType);
-
           _el.focus();
 
           break;
@@ -256,8 +250,7 @@ var a11yGroup = function a11yGroup(el, options) {
 
 
   this.onClick = function (e) {
-    var target = e.target,
-        currentTarget = e.currentTarget;
+    var target = e.target;
 
     if (_this.preventClickDefault) {
       e.preventDefault();
@@ -301,12 +294,9 @@ var a11yGroup = function a11yGroup(el, options) {
   this.onKeyUp = function (e) {
     var key = e.key,
         target = e.target,
-        currentTarget = e.currentTarget,
-        shiftKey = e.shiftKey;
+        currentTarget = e.currentTarget;
     var targetRole = target.getAttribute('role');
-    var ariaCheckedCallback = _this.ariaCheckedCallback,
-        allowTabbing = _this.allowTabbing,
-        doKeyChecking = _this.doKeyChecking;
+    var doKeyChecking = _this.doKeyChecking;
 
     if (targetRole === _this.groupType) {
       var radioEls = Array.from(currentTarget.querySelectorAll("[role=\"".concat(_this.groupType, "\"]")));
@@ -661,7 +651,6 @@ var accessibility = {
       return;
     }
 
-    console.log('blurredEl', blurredEl, this.activeSubdocument, this.activeSubdocument.contains(blurredEl));
     var allowableFocusableEls = this.activeSubdocument.querySelectorAll(this.tabbableSelector);
     var firstFocusableElement = allowableFocusableEls[0];
     var lastFocusableElement = allowableFocusableEls[allowableFocusableEls.length - 1];
@@ -851,7 +840,7 @@ var accessibility = {
    * https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values
    * 
    * @param {String} key 
-   * @returns the official property value that is supposed to be set for that key.
+   * @returns {String} the official property value that is supposed to be set for that key.
    */
   normalizedKey: function normalizedKey(key) {
     switch (key) {
@@ -952,6 +941,19 @@ var accessibility = {
     }
 
     return $ariaControlsEl;
+  },
+
+  /**
+   * Calling this method will give accessibility debugging information
+   * into your app.  For now, this consists of stack trace information
+   * for calls to the HTMLELement focus() method in the console.
+   */
+  setDebugMode: function setDebugMode() {
+    HTMLElement.prototype.oldFocus = HTMLElement.prototype.focus;
+
+    HTMLElement.prototype.focus = function () {
+      this.oldFocus();
+    };
   },
 
   /**
