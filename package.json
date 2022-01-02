@@ -1,6 +1,6 @@
 {
   "name": "accessibility-js-routines",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "A library with commonly used accessibility routines.",
   "main": "index.js",
   "repository": {
