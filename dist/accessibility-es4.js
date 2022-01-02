@@ -93,7 +93,9 @@ var a11yGroup = function a11yGroup(el, options) {
         radioFocusCallback = _ref.radioFocusCallback,
         focusCallback = _ref.focusCallback,
         doSelectFirstOnInit = _ref.doSelectFirstOnInit,
-        visuallyHiddenClass = _ref.visuallyHiddenClass;
+        visuallyHiddenClass = _ref.visuallyHiddenClass,
+        activatedEventName = _ref.activatedEventName,
+        deactivatedEventName = _ref.deactivatedEventName;
 
     _this.allowTabbing = !!allowTabbing;
     _this.doKeyChecking = !!doKeyChecking;
@@ -101,6 +103,8 @@ var a11yGroup = function a11yGroup(el, options) {
     _this.setState = setState === false ? false : true;
     _this.role = el.getAttribute('role');
     _this.visuallyHiddenClass = visuallyHiddenClass || 'sr-only';
+    _this.activatedEventName = activatedEventName;
+    _this.deactivatedEventName = deactivatedEventName;
     var groupRe = /(group$|list$|^listbox$)/;
     keyboardOnlyInstructionsId = el.dataset.keyboardOnlyInstructions;
     keyboardOnlyInstructionsEl = keyboardOnlyInstructionsId ? document.getElementById(keyboardOnlyInstructionsId) : null;
@@ -182,10 +186,10 @@ var a11yGroup = function a11yGroup(el, options) {
   };
   /**
    *
-   * Checks an ARIA radio button, while unchecking the others in its radiogroup.
+   * Activates a control in a group, while unchecking the others.
    *
-   * @param {HTMLElement} radioEl - a radio button that needs to be checked
-   * @param {Array} radioGroupEls - an array of radio buttons that is in the same group as radioEl
+   * @param {HTMLElement} memberEl - a control that needs to be activated
+   * @param {Array} radioGroupEls - an array of controls that is in the same group as memberEl
    */
 
 
@@ -194,7 +198,10 @@ var a11yGroup = function a11yGroup(el, options) {
         setState = _this.setState,
         checkedAttribute = _this.checkedAttribute,
         allowTabbing = _this.allowTabbing;
-    var groupEls = Array.from(memberEl.closest("[role=".concat(_this.role, "]")).querySelectorAll("[role=\"".concat(_this.groupType, "\"]")));
+
+    var _group = memberEl.closest("[role=".concat(_this.role, "]"));
+
+    var groupEls = Array.from(_group.querySelectorAll("[role=\"".concat(_this.groupType, "\"]")));
     var previouslyCheckedEl;
     var currentlyCheckedEl;
     var currentlyCheckedIndex;
@@ -218,6 +225,14 @@ var a11yGroup = function a11yGroup(el, options) {
 
       if (setState) {
         currentEl.setAttribute(checkedAttribute, checkedState);
+        currentEl.dispatchEvent(new CustomEvent(checkedState === 'true' ? _this.activatedEventName : _this.deactivatedEventName, {
+          'bubbles': true,
+          detail: {
+            group: function group() {
+              return _group;
+            }
+          }
+        }));
 
         if (currentEl === memberEl) {
           if (document.activeElement !== document.body) {
@@ -346,8 +361,12 @@ var a11yGroup = function a11yGroup(el, options) {
             elToFocus.focus();
 
             if (key === 'Tab') {
+              // The pause override is here if this requestAnimationFrame()
+              // function is the one that is provided by pause-anim-control.js.
               requestAnimationFrame(function () {
                 _this.onFocus(e);
+              }, {
+                useRealRAF: true
               });
             }
           });
@@ -461,7 +480,7 @@ accessibility = {
       if (!isFormInvalid) {
         // Ensure what is being painted right now is complete to ensure we can
         // grab the first error.
-        window.requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
           var globalError = formElement.querySelector('.form-error__error-text');
 
           if (globalError) {
@@ -553,7 +572,7 @@ accessibility = {
   doIfBlurred: function doIfBlurred(e, func) {
     // The `requestAnimationFrame` is needed since the browser doesn't know
     // what the focus is being switched *to* until after a repaint.
-    window.requestAnimationFrame(this.doIfBlurredHelper.bind(this, e.currentTarget, e.relatedTarget, func));
+    requestAnimationFrame(this.doIfBlurredHelper.bind(this, e.currentTarget, e.relatedTarget, func));
   },
 
   /**
@@ -674,7 +693,7 @@ accessibility = {
     var activeSubdocument = this.activeSubdocument;
 
     if (activeSubdocument) {
-      window.requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
         var _document2 = document,
             activeElement = _document2.activeElement;
 

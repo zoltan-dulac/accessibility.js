@@ -80,13 +80,15 @@ const a11yGroup = function(el, options) {
    * 
    */
   this.init = (el, options) => {
-    const { preventClickDefault, allowTabbing, doKeyChecking, ariaCheckedCallback, setState, radioFocusCallback, focusCallback, doSelectFirstOnInit, visuallyHiddenClass } = (options || {});
+    const { preventClickDefault, allowTabbing, doKeyChecking, ariaCheckedCallback, setState, radioFocusCallback, focusCallback, doSelectFirstOnInit, visuallyHiddenClass, activatedEventName, deactivatedEventName } = (options || {});
     this.allowTabbing = !!allowTabbing;
     this.doKeyChecking = !!doKeyChecking;
     this.preventClickDefault = !!preventClickDefault;
     this.setState = (setState === false) ? false : true;
     this.role = el.getAttribute('role');
     this.visuallyHiddenClass = visuallyHiddenClass || 'sr-only';
+    this.activatedEventName = activatedEventName;
+    this.deactivatedEventName = deactivatedEventName;
     const groupRe = /(group$|list$|^listbox$)/;
     keyboardOnlyInstructionsId = el.dataset.keyboardOnlyInstructions;
     keyboardOnlyInstructionsEl = keyboardOnlyInstructionsId ? document.getElementById(keyboardOnlyInstructionsId) : null;
@@ -164,14 +166,15 @@ const a11yGroup = function(el, options) {
 
   /**
    *
-   * Checks an ARIA radio button, while unchecking the others in its radiogroup.
+   * Activates a control in a group, while unchecking the others.
    *
-   * @param {HTMLElement} radioEl - a radio button that needs to be checked
-   * @param {Array} radioGroupEls - an array of radio buttons that is in the same group as radioEl
+   * @param {HTMLElement} memberEl - a control that needs to be activated
+   * @param {Array} radioGroupEls - an array of controls that is in the same group as memberEl
    */
   this.select = (e, memberEl, doNotRefocus) => {
     const { ariaCheckedCallback, setState, checkedAttribute, allowTabbing } = this;
-    const groupEls = Array.from(memberEl.closest(`[role=${this.role}]`).querySelectorAll(`[role="${this.groupType}"]`));
+    const group = memberEl.closest(`[role=${this.role}]`);
+    const groupEls = Array.from(group.querySelectorAll(`[role="${this.groupType}"]`));
     let previouslyCheckedEl;
     let currentlyCheckedEl;
     let currentlyCheckedIndex;
@@ -192,6 +195,14 @@ const a11yGroup = function(el, options) {
       }
       if (setState) {
         currentEl.setAttribute(checkedAttribute, checkedState);
+        currentEl.dispatchEvent(new CustomEvent(
+          (checkedState === 'true' ? this.activatedEventName : this.deactivatedEventName), {
+            'bubbles': true,
+            detail: {
+              group: () => group
+            }
+          }
+        ))
         if (currentEl === memberEl) {
           if (document.activeElement !== document.body) {
             currentEl.focus();
@@ -263,6 +274,7 @@ const a11yGroup = function(el, options) {
   this.onKeyUp = (e) => {
     const { key, target, currentTarget } = e;
     const targetRole = target.getAttribute('role');
+
     let { doKeyChecking } = this;
 
     if (targetRole === this.groupType) {
@@ -304,9 +316,12 @@ const a11yGroup = function(el, options) {
             elToFocus.focus();
 
             if (key === 'Tab') {
+
+              // The pause override is here if this requestAnimationFrame()
+              // function is the one that is provided by pause-anim-control.js.
               requestAnimationFrame(() => {
                 this.onFocus(e);
-              });
+              }, { useRealRAF: true });
             }
           });
         }
@@ -380,6 +395,7 @@ accessibility = {
    */
   applyFormFocus(formElement, options = {}) {
     const { firstValid, isAjaxForm, e } = options;
+
     let isFormInvalid = false;
 
     if (isAjaxForm) {
@@ -417,7 +433,7 @@ accessibility = {
       if (!isFormInvalid) {
         // Ensure what is being painted right now is complete to ensure we can
         // grab the first error.
-        window.requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
           const globalError = formElement.querySelector('.form-error__error-text');
           if (globalError) {
             this.focusAndScrollToView(globalError);
@@ -502,9 +518,11 @@ accessibility = {
    * @param {Function} func - function to be called when this currentTarget is blurred out of
    */
   doIfBlurred(e, func) {
+
+
     // The `requestAnimationFrame` is needed since the browser doesn't know
     // what the focus is being switched *to* until after a repaint.
-    window.requestAnimationFrame(
+    requestAnimationFrame(
       this.doIfBlurredHelper.bind(this, e.currentTarget, e.relatedTarget, func)
     );
   },
@@ -629,8 +647,10 @@ accessibility = {
   doWhenActiveSubdocIsBlurred(blurredEl, func) {
     const { activeSubdocument } = this;
 
+
+
     if (activeSubdocument) {
-      window.requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
         const { activeElement } = document;
         if (activeElement !== null && !activeSubdocument.contains(activeElement)) {
           func(blurredEl);
@@ -687,6 +707,7 @@ accessibility = {
    */
   setMobileFocusLoop(el) {
     const { body } = document;
+
     let currentEl = el;
 
     // If there are any nodes with oldAriaHiddenVal set, we should
