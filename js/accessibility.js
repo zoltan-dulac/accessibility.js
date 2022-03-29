@@ -585,116 +585,96 @@ accessibility = {
   },
 
   /**
-   * Hides the main content from assistive technologies (like screen readers).
-   * This is useful when you want to make sure the main content is not
-   * accessible to AT on certain devices, like the iOS Voiceover screen reader
-   * when a flyout is open, to ensure the user doesn't accidentally access
-   * the main content when the "blur" outside of the main menu.
-   *
-   * @param {Boolean} s - the visibility of the main content.
-   *
+   * Creates a visually hidden HTML element that will only be accessible
+   * to keyboard users.  
+   * 
+   * @returns The new HTML trap element.
    */
-  setMainContentAriaHidden(value) {
-    const els = document.querySelectorAll(this.mainContentSelector);
-    for (let i = 0; i < els.length; i++) {
-      const el = els[i];
+  createKeyboardTrap() {
+    const trap = document.createElement("div");
+    trap.classList.add("enable-tabtrap");
+    trap.classList.add("sr-only");
+    trap.setAttribute("tabindex", "0");
 
-      // setting the aria-hidden attribute to 'false' would make the element
-      // accessible to Voiceover, it just wouldn't be able to read it.
-      // This is why we set it to `null`.
-      if (value) {
-        el.setAttribute('aria-hidden', value);
+    return trap;
+  },
+
+
+  /**
+   * Removes a keyboard focus loop on the passed element
+   * that was set by the `setKeyboardFocusLoop()` method.
+   * 
+   * @param {HTMLElement} element - The HTML trap element to remove. 
+   */
+  removeKeyboardFocusLoop(element) {
+    document.querySelectorAll('.enable-tabtrap').forEach((el) => {
+      if (el.classList.contains('enable-tabtrap__first')) {
+        el.removeEventListener("focus", this.focusLastElement);
       } else {
-        el.removeAttribute('aria-hidden');
+        el.removeEventListener("focus", this.focusFirstElement);
       }
-    }
+      el.parentElement.removeChild(el);
+    })
   },
 
   /**
-   * Detects while element has been blurred inside the active subdocument (e.g. a modal).
-   * If it is the first, then we focus the last element.
-   * If it is the last, then we focus the first.
-   *
-   * Note that this only works in non-mobile devices, since mobile
-   * devices don't track focus and blur events.
-   *
-   * @param {HTMLElement} blurredEl
+   * Sets a keyboard focus loop on the passed element.
+   *  
+   * @param {HTMLElement} el - The HTML element that a focus loop will be applied to.
    */
-  keepFocusInsideActiveSubdoc(blurredEl) {
-    const { activeSubdocument } = this;
+  setKeyboardFocusLoop(el) {
+    const firstTrap = this.createKeyboardTrap();
+    const lastTrap = this.createKeyboardTrap();
 
-    if (!activeSubdocument || activeSubdocument.contains(document.activeElement)) {
-      return;
-    }
-
-    const allowableFocusableEls = this.activeSubdocument.querySelectorAll(this.tabbableSelector);
-    const firstFocusableElement = allowableFocusableEls[0];
-    const lastFocusableElement = allowableFocusableEls[allowableFocusableEls.length - 1];
-    if (blurredEl === firstFocusableElement) {
-      lastFocusableElement.focus();
-    } else {
-      firstFocusableElement.focus();
-    }
+    this.applyKeyboardTraps(el, firstTrap, lastTrap);
   },
 
   /**
-   * Detects when focus is being blurred out ofthe activeSubdocument of a
-   * page (e.g. an open modal).  If it is, it executes a callback, func.
-   *
-   * @param {HTMLElement} blurredEl
-   * @param {function} func
+   * Determines what element has a focus loop applied, and applies focus to the
+   * first tabbable HTML element in it.
+   * 
+   * @param {Event} e - the focus event fired from the `applyKeyboardTraps()` method.
    */
-  doWhenActiveSubdocIsBlurred(blurredEl, func) {
-    const { activeSubdocument } = this;
-
-
-
-    if (activeSubdocument) {
-      requestAnimationFrame(() => {
-        const { activeElement } = document;
-        if (activeElement !== null && !activeSubdocument.contains(activeElement)) {
-          func(blurredEl);
-        }
-      });
-    }
-  },
-
-  /**
-   * A blur event handler to that will create a focus loop
-   * inside the activeSubdocument (e.g. a modal).
-   *
-   * @param {EventHandler} e - the blur event handler
-   */
-  testIfFocusIsOutside(e) {
-    const blurredEl = e.target;
-    const { activeSubdocument } = this;
-
-    if (activeSubdocument) {
-      this.doWhenActiveSubdocIsBlurred(blurredEl, this.keepFocusInsideActiveSubdoc.bind(this));
-    }
-  },
-
-  /**
-   * A focus event that will be activated when, say, a modal
-   * is open.  When a modal (a.k.a. activeSubdocument) is open,
-   * and focus goes outside of that element, we put focus to the
-   * first element.
-   *
-   * @param {EventHandler} e - a focus event handler.
-   */
-  correctFocusFromBrowserChrome(e) {
+  focusFirstElement(e) {
     const { activeSubdocument, tabbableSelector } = this;
-    const { activeElement } = document;
-    const { relatedTarget } = e;
-
-    if (activeSubdocument && relatedTarget === null && !activeSubdocument.contains(activeElement)) {
-      const allowableFocusableEls = activeSubdocument.querySelectorAll(tabbableSelector);
-      if (allowableFocusableEls.length > 0) {
-        const firstFocusableElement = allowableFocusableEls[0];
-        firstFocusableElement.focus();
-      }
-    }
+    const tabbableEls = activeSubdocument.querySelectorAll(tabbableSelector);
+    tabbableEls[1].focus();
   },
+  
+  /**
+   * Determines what element has a focus loop applied, and applies focus to the
+   * last tabbable HTML element in it.
+   * 
+   * @param {Event} e - the focus event fired from the `applyKeyboardTraps()` method.
+   */
+  focusLastElement(e) {
+    const { activeSubdocument, tabbableSelector } = this;
+    const tabbableEls = activeSubdocument.querySelectorAll(tabbableSelector);
+    tabbableEls[tabbableEls.length - 2].focus();
+  },
+
+  /**
+   * Used by setKeyboardFocusLoop().  Inserts the two visually hidden focus trap 
+   * elements to the passed element: one as its first tabbable element, the other
+   * as the last.
+   * 
+   * @param {HTMLElement} element - the element where a focus loop should be applied.
+   * @param {HTMLElement} firstTrap - the first visually hidden focus trap 
+   * element
+   * @param {HTMLElement} lastTrap - the last visually hidden focus trap 
+   * element
+   */
+  applyKeyboardTraps(element, firstTrap, lastTrap) {
+    firstTrap.classList.add('enable-tabtrap__first');
+    firstTrap.addEventListener("focus", this.focusLastElement.bind(this));
+    lastTrap.classList.add('enable-tabtrap__last');
+    lastTrap.addEventListener("focus", this.focusFirstElement.bind(this));
+
+    element.insertBefore(firstTrap, element.firstChild);
+    element.appendChild(lastTrap);
+  },
+
+
 
   /**
    * This ensures that a mobile devices "accessibilityFocus"
@@ -789,13 +769,11 @@ accessibility = {
         accessibility.setKeepFocusInside(this.activeSubdocument, false);
       }
       this.activeSubdocument = el;
-      body.addEventListener('blur', this.testIfFocusIsOutside.bind(this), true);
-      body.addEventListener('focus', this.correctFocusFromBrowserChrome.bind(this), true);
+      this.setKeyboardFocusLoop(el);
       this.setMobileFocusLoop(el);
     } else {
       this.activeSubdocument = null;
-      body.removeEventListener('blur', this.testIfFocusIsOutside.bind(this), true);
-      body.removeEventListener('focus', this.correctFocusFromBrowserChrome.bind(this), true);
+      this.removeKeyboardFocusLoop(el);
       this.removeMobileFocusLoop(el);
     }
   },
