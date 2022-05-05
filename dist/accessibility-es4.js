@@ -945,6 +945,66 @@ accessibility = {
     return $ariaControlsEl;
   },
 
+  /*!
+   * Determine if an element is in the viewport
+   * (c) 2017 Chris Ferdinandi, MIT License, https://gomakethings.com
+   * @param  {Node}    elem The element
+   * @return {Boolean}      Returns true if element is in the viewport
+   */
+  isInViewport: function isInViewport(elem) {
+    var distance = elem.getBoundingClientRect();
+    return distance.top >= 0 && distance.left >= 0 && distance.bottom <= (window.innerHeight || document.documentElement.clientHeight) && distance.right <= (window.innerWidth || document.documentElement.clientWidth);
+  },
+
+  /**
+   * Resets the page zoom on a webpage when virtual keyboard appears when an input
+   * field is focused on iOS.  Doesn't affect Android, since it doesn't have this
+   * default behavior.
+   * 
+   * Code based on Jason Miller's Codepen:
+   * https://codepen.io/developit/pen/YBgjoo
+   */
+  resetZoom: function resetZoom() {
+    var $origMetaViewport = document.querySelector('meta[name="viewport"]');
+    var origContentValue = $origMetaViewport.getAttribute('content');
+
+    if (origContentValue.indexOf('user-scalable=no') > -1) {
+      console.warn('user-scalable=no is set in the <meta name="viewport">.  You must fix this in order for the page to be accessible');
+    } // Let's temporarily turn off the ability to turn off zooming.
+
+
+    var meta = document.createElement('meta');
+    meta.setAttribute('name', 'viewport');
+    meta.setAttribute('content', 'width=device-width, initial-scale=1, user-scalable=no');
+    var zoom = document.documentElement.style.zoom;
+    document.documentElement.style.zoom = 0.99;
+    document.head.appendChild(meta);
+    window.requestAnimationFrame(function () {
+      // reset zoom level back to what it was.
+      document.documentElement.style.zoom = zoom; // Let's turn zooming back on.
+
+      document.head.removeChild(meta); // if the virtual keyboard is opened, we need to check to see if the
+      // focused element is under it. If so, nudge it so it is visible onscreen.
+
+      if (window.visualViewport !== 0) {
+        var _window = window,
+            pageYOffset = _window.pageYOffset,
+            innerHeight = _window.innerHeight;
+        var bottomY = pageYOffset + innerHeight;
+        var midY = pageYOffset + innerHeight / 2;
+        var _document4 = document,
+            activeElement = _document4.activeElement;
+        var activeElementY = pageYOffset + activeElement.getBoundingClientRect().top;
+
+        if (midY <= activeElementY && activeElementY <= bottomY) {
+          setTimeout(function () {
+            window.scrollTo(0, activeElementY - innerHeight / 4);
+          }, 100);
+        }
+      }
+    });
+  },
+
   /**
    * Calling this method will give accessibility debugging information
    * into your app.  For now, this consists of stack trace information
