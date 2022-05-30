@@ -1,5 +1,17 @@
 "use strict";
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _iterableToArray(iter) { if (typeof Symbol !== "undefined" && iter[Symbol.iterator] != null || iter["@@iterator"] != null) return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) return _arrayLikeToArray(arr); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
 /*
  * accessibility.js - a library with common accessibility related routines.
  * by Zoltan Hawryluk (zoltan.dulac@gmail.com)
@@ -396,7 +408,10 @@ var a11yGroup = function a11yGroup(el, options) {
 accessibility = {
   tempFocusElement: null,
   tempFocusElementText: ' select ',
-  tabbableSelector: "a[href]:not([tabindex=\"-1\"]):not([disabled]),\n     area[href]:not([tabindex=\"-1\"]):not([disabled]),\n     details:not([tabindex=\"-1\"]):not([disabled]),\n     iframe:not([tabindex=\"-1\"]):not([disabled]),\n     keygen:not([tabindex=\"-1\"]):not([disabled]),\n     [contentEditable=true]:not([tabindex=\"-1\"]):not([disabled]),\n     :enabled:not(fieldset):not([tabindex=\"-1\"]):not([disabled]),\n     object:not([tabindex=\"-1\"]):not([disabled]),\n     embed:not([tabindex=\"-1\"]):not([disabled]),\n     [tabindex]:not([tabindex=\"-1\"]):not([disabled])",
+  // This selector has been added to over the years.  Some of these 
+  // items added from
+  // https://github.com/zellwk/javascript/blob/master/src/browser/accessibility/focusable/focusable.js
+  tabbableSelector: "a[href]:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     area[href]:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     details:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     iframe:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     keygen:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     [contentEditable=true]:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     :enabled:not(fieldset):not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     object:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     embed:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     [tabindex]:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     video[controls]:not([tabindex=\"-1\"]):not([disabled]):not([hidden]),\n     audio[controls]:not([tabindex=\"-1\"]):not([disabled]):not([hidden])",
   htmlTagRegex: /(<([^>]+)>)/gi,
   hasSecondaryNavSkipTarget: false,
   // This should set in your project (and outside the script) to be a selector that covers all your main content.
@@ -691,7 +706,7 @@ accessibility = {
   focusFirstElement: function focusFirstElement(e) {
     var activeSubdocument = this.activeSubdocument,
         tabbableSelector = this.tabbableSelector;
-    var tabbableEls = activeSubdocument.querySelectorAll(tabbableSelector);
+    var tabbableEls = this.getAlTabbableEls(activeSubdocument);
     tabbableEls[1].focus();
   },
 
@@ -704,8 +719,25 @@ accessibility = {
   focusLastElement: function focusLastElement(e) {
     var activeSubdocument = this.activeSubdocument,
         tabbableSelector = this.tabbableSelector;
-    var tabbableEls = activeSubdocument.querySelectorAll(tabbableSelector);
+    var tabbableEls = this.getAlTabbableEls(activeSubdocument);
     tabbableEls[tabbableEls.length - 2].focus();
+  },
+
+  /**
+   * Grabs all the tabbable children inside an element.
+   * Based on code by Zell Liew:
+   * https://github.com/zellwk/javascript/blob/master/src/browser/accessibility/focusable/focusable.js
+   * 
+   * Code modified to have support for our tabbableSelector object and to ensure invisible elements are
+   * not counted.
+   * 
+   * @param {HTMLElement} el - the root element 
+   * @returns {Array} - all the HTML elements that can gain keyboard focus
+   */
+  getAlTabbableEls: function getAlTabbableEls(el) {
+    return _toConsumableArray(el.querySelectorAll(this.tabbableSelector)).filter(function (el) {
+      return el.offsetWidth !== 0 && el.offsetHeight !== 0 && el.style.display !== 'none';
+    });
   },
 
   /**
