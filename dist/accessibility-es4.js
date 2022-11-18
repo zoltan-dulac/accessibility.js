@@ -363,6 +363,26 @@ var a11yGroup = function a11yGroup(el, options) {
 
             break;
 
+          case 'Home':
+            e.preventDefault();
+            elToFocus = radioEls[0];
+
+            if (!isOption) {
+              _this.select(e, elToFocus, true);
+            }
+
+            break;
+
+          case 'End':
+            e.preventDefault();
+            elToFocus = radioEls[radioEls.length - 1];
+
+            if (!isOption) {
+              _this.select(e, elToFocus, true);
+            }
+
+            break;
+
           case ' ':
           case 'Enter':
             if (doKeyChecking) {
